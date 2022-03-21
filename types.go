@@ -35,7 +35,7 @@ type MatTypes interface {
 		*Mat[float32] | *Mat[float64]
 }
 
-// Mat represents the matrix representation for supported data types
+// Mat represents the matrix for supported data types
 // parameterized by primitive types
 type Mat[T PrimitiveTypes] struct {
 	Elms []T   `json:"elms,omitempty"`
@@ -55,7 +55,7 @@ func NewMat[T PrimitiveTypes](values []T, dims ...int) (*Mat[T], error) {
 	}
 
 	if len(m.Dims) == 0 {
-		return nil, fmt.Errorf("invalid dimenstion")
+		return nil, fmt.Errorf("invalid dimensions")
 	}
 
 	numElements, err := dim2NumElms(m.Dims)

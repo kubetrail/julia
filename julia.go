@@ -1,7 +1,7 @@
 package julia
 
 /*
-// Start with the basic example from https://docs.julialang.org/en/release-0.6/manual/embedding/
+// Start with the basic example from https://docs.julialang.org/en/v1/manual/embedding/
 //
 // Obviously the paths below may need to be modified to match your julia install location and version number.
 //
