@@ -119,7 +119,7 @@ func allocArray(arrayType *C.jl_value_t, dims ...int) (*C.jl_array_t, error) {
 
 // marshal packs supported input to a generic jlValue type to pass to
 // julia runtime
-func marshal(x interface{}) (*jlValue, error) {
+func marshal(x any) (*jlValue, error) {
 	switch v := x.(type) {
 	case bool:
 		if v {
@@ -214,359 +214,34 @@ func marshal(x interface{}) (*jlValue, error) {
 		}
 		return Marshal(m)
 	case *Mat[bool]:
-		n := uint64(len(v.Dims))
-		arrayType := C.jl_apply_array_type(
-			(*(C.jl_value_t))(
-				unsafe.Pointer(
-					C.jl_int8_type,
-				),
-			),
-			C.ulong(n),
-		)
-
-		array, err := allocArray(arrayType, v.Dims...)
-		if err != nil {
-			return nil, fmt.Errorf("could not allocate array: %w", err)
-		}
-
-		data := array.data
-		ptr := unsafe.Pointer(data)
-
-		el := int8(0)
-		count, err := dim2NumElms(v.Dims)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < count; i++ {
-			p := (*int8)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-			if v.Elms[i] {
-				*p = int8(1)
-			} else {
-				*p = int8(0)
-			}
-		}
-
-		return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+		return marshalMat[bool, *bool](v)
 	case *Mat[uint8]:
-		n := uint64(len(v.Dims))
-		arrayType := C.jl_apply_array_type(
-			(*(C.jl_value_t))(
-				unsafe.Pointer(
-					C.jl_uint8_type,
-				),
-			),
-			C.ulong(n),
-		)
-
-		array, err := allocArray(arrayType, v.Dims...)
-		if err != nil {
-			return nil, fmt.Errorf("could not allocate array: %w", err)
-		}
-
-		data := array.data
-		ptr := unsafe.Pointer(data)
-
-		// https://stackoverflow.com/questions/49931051/cgo-how-do-you-use-pointers-in-golang-to-access-data-from-an-array-in-c
-		el := byte(0)
-		count, err := dim2NumElms(v.Dims)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < count; i++ {
-			// https://stackoverflow.com/a/49961256
-			p := (*byte)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-			*p = v.Elms[i]
-		}
-
-		return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+		return marshalMat[uint8, *uint8](v)
 	case *Mat[uint16]:
-		n := uint64(len(v.Dims))
-		arrayType := C.jl_apply_array_type(
-			(*(C.jl_value_t))(
-				unsafe.Pointer(
-					C.jl_uint16_type,
-				),
-			),
-			C.ulong(n),
-		)
-
-		array, err := allocArray(arrayType, v.Dims...)
-		if err != nil {
-			return nil, fmt.Errorf("could not allocate array: %w", err)
-		}
-
-		data := array.data
-		ptr := unsafe.Pointer(data)
-
-		el := uint16(0)
-		count, err := dim2NumElms(v.Dims)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < count; i++ {
-			p := (*uint16)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-			*p = v.Elms[i]
-		}
-
-		return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+		return marshalMat[uint16, *uint16](v)
 	case *Mat[uint32]:
-		n := uint64(len(v.Dims))
-		arrayType := C.jl_apply_array_type(
-			(*(C.jl_value_t))(
-				unsafe.Pointer(
-					C.jl_uint32_type,
-				),
-			),
-			C.ulong(n),
-		)
-
-		array, err := allocArray(arrayType, v.Dims...)
-		if err != nil {
-			return nil, fmt.Errorf("could not allocate array: %w", err)
-		}
-
-		data := array.data
-		ptr := unsafe.Pointer(data)
-
-		el := uint32(0)
-		count, err := dim2NumElms(v.Dims)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < count; i++ {
-			p := (*uint32)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-			*p = v.Elms[i]
-		}
-
-		return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+		return marshalMat[uint32, *uint32](v)
 	case *Mat[uint64]:
-		n := uint64(len(v.Dims))
-		arrayType := C.jl_apply_array_type(
-			(*(C.jl_value_t))(
-				unsafe.Pointer(
-					C.jl_uint64_type,
-				),
-			),
-			C.ulong(n),
-		)
-
-		array, err := allocArray(arrayType, v.Dims...)
-		if err != nil {
-			return nil, fmt.Errorf("could not allocate array: %w", err)
-		}
-
-		data := array.data
-		ptr := unsafe.Pointer(data)
-
-		el := uint64(0)
-		count, err := dim2NumElms(v.Dims)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < count; i++ {
-			p := (*uint64)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-			*p = v.Elms[i]
-		}
-
-		return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+		return marshalMat[uint64, *uint64](v)
 	case *Mat[int8]:
-		n := uint64(len(v.Dims))
-		arrayType := C.jl_apply_array_type(
-			(*(C.jl_value_t))(
-				unsafe.Pointer(
-					C.jl_int8_type,
-				),
-			),
-			C.ulong(n),
-		)
-
-		array, err := allocArray(arrayType, v.Dims...)
-		if err != nil {
-			return nil, fmt.Errorf("could not allocate array: %w", err)
-		}
-
-		data := array.data
-		ptr := unsafe.Pointer(data)
-
-		el := int8(0)
-		count, err := dim2NumElms(v.Dims)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < count; i++ {
-			p := (*int8)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-			*p = v.Elms[i]
-		}
-
-		return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+		return marshalMat[int8, *int8](v)
 	case *Mat[int16]:
-		n := uint64(len(v.Dims))
-		arrayType := C.jl_apply_array_type(
-			(*(C.jl_value_t))(
-				unsafe.Pointer(
-					C.jl_int16_type,
-				),
-			),
-			C.ulong(n),
-		)
-
-		array, err := allocArray(arrayType, v.Dims...)
-		if err != nil {
-			return nil, fmt.Errorf("could not allocate array: %w", err)
-		}
-
-		data := array.data
-		ptr := unsafe.Pointer(data)
-
-		el := int16(0)
-		count, err := dim2NumElms(v.Dims)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < count; i++ {
-			p := (*int16)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-			*p = v.Elms[i]
-		}
-
-		return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+		return marshalMat[int16, *int16](v)
 	case *Mat[int32]:
-		n := uint64(len(v.Dims))
-		arrayType := C.jl_apply_array_type(
-			(*(C.jl_value_t))(
-				unsafe.Pointer(
-					C.jl_int32_type,
-				),
-			),
-			C.ulong(n),
-		)
-
-		array, err := allocArray(arrayType, v.Dims...)
-		if err != nil {
-			return nil, fmt.Errorf("could not allocate array: %w", err)
-		}
-
-		data := array.data
-		ptr := unsafe.Pointer(data)
-
-		el := int32(0)
-		count, err := dim2NumElms(v.Dims)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < count; i++ {
-			p := (*int32)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-			*p = v.Elms[i]
-		}
-
-		return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+		return marshalMat[int32, *int32](v)
 	case *Mat[int64]:
-		n := uint64(len(v.Dims))
-		arrayType := C.jl_apply_array_type(
-			(*(C.jl_value_t))(
-				unsafe.Pointer(
-					C.jl_int64_type,
-				),
-			),
-			C.ulong(n),
-		)
-
-		array, err := allocArray(arrayType, v.Dims...)
-		if err != nil {
-			return nil, fmt.Errorf("could not allocate array: %w", err)
-		}
-
-		data := array.data
-		ptr := unsafe.Pointer(data)
-
-		el := int64(0)
-		count, err := dim2NumElms(v.Dims)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < count; i++ {
-			p := (*int64)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-			*p = v.Elms[i]
-		}
-
-		return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+		return marshalMat[int64, *int64](v)
 	case *Mat[float32]:
-		n := uint64(len(v.Dims))
-		arrayType := C.jl_apply_array_type(
-			(*(C.jl_value_t))(
-				unsafe.Pointer(
-					C.jl_float32_type,
-				),
-			),
-			C.ulong(n),
-		)
-
-		array, err := allocArray(arrayType, v.Dims...)
-		if err != nil {
-			return nil, fmt.Errorf("could not allocate array: %w", err)
-		}
-
-		data := array.data
-		ptr := unsafe.Pointer(data)
-
-		el := float32(0)
-		count, err := dim2NumElms(v.Dims)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < count; i++ {
-			p := (*float32)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-			*p = v.Elms[i]
-		}
-
-		return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+		return marshalMat[float32, *float32](v)
 	case *Mat[float64]:
-		n := uint64(len(v.Dims))
-		arrayType := C.jl_apply_array_type(
-			(*(C.jl_value_t))(
-				unsafe.Pointer(
-					C.jl_float64_type,
-				),
-			),
-			C.ulong(n),
-		)
-
-		array, err := allocArray(arrayType, v.Dims...)
-		if err != nil {
-			return nil, fmt.Errorf("could not allocate array: %w", err)
-		}
-
-		data := array.data
-		ptr := unsafe.Pointer(data)
-
-		el := float64(0)
-		count, err := dim2NumElms(v.Dims)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := 0; i < count; i++ {
-			p := (*float64)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-			*p = v.Elms[i]
-		}
-
-		return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+		return marshalMat[float64, *float64](v)
 	default:
 		return nil, fmt.Errorf("invalid type, not supported %T", v)
 	}
 }
 
 // unmarshal unpacks generic jlValue and populates pointer value in x
-func unmarshal(data *jlValue, x interface{}) error {
+func unmarshal(data *jlValue, x any) error {
 	value := data.value
 	switch v := x.(type) {
 	case *bool:
@@ -596,120 +271,216 @@ func unmarshal(data *jlValue, x interface{}) error {
 	case *float64:
 		*v = float64(C.jl_unbox_float64(value))
 	case *Mat[bool]:
-		// same logic for *[]bool as done above for *[]byte
-		array := (*(C.jl_array_t))(unsafe.Pointer(value))
-		data := array.data
-		ptr := unsafe.Pointer(data)
-		for i := range v.Elms {
-			// https://stackoverflow.com/a/49961256
-			p := (*bool)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(false)))
-			(*v).Elms[i] = *p
-		}
+		unmarshalMat[bool, *bool](data, v)
 	case *Mat[uint8]:
-		// cast value as unsafe pointer first, which makes it
-		// equivalent to void* in C, then cast it to
-		// pointer of jl_array_t
-		array := (*(C.jl_array_t))(unsafe.Pointer(value))
-
-		// access the data field
-		data := array.data
-
-		// cast it as unsafe pointer in order to perform
-		// pointer arithmetics
-		ptr := unsafe.Pointer(data)
-
-		// better be sure that returned data is of that specific length
-		for i := range v.Elms {
-			// https://stackoverflow.com/a/49961256
-			p := (*byte)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(byte(0))))
-			(*v).Elms[i] = *p
-		}
+		unmarshalMat[uint8, *uint8](data, v)
 	case *Mat[uint16]:
-		array := (*(C.jl_array_t))(unsafe.Pointer(value))
-		data := array.data
-		ptr := unsafe.Pointer(data)
-		for i := range v.Elms {
-			// https://stackoverflow.com/a/49961256
-			p := (*uint16)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(uint16(0))))
-			(*v).Elms[i] = *p
-		}
+		unmarshalMat[uint16, *uint16](data, v)
 	case *Mat[uint32]:
-		array := (*(C.jl_array_t))(unsafe.Pointer(value))
-		data := array.data
-		ptr := unsafe.Pointer(data)
-		for i := range v.Elms {
-			// https://stackoverflow.com/a/49961256
-			p := (*uint32)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(uint32(0))))
-			(*v).Elms[i] = *p
-		}
+		unmarshalMat[uint32, *uint32](data, v)
 	case *Mat[uint64]:
-		array := (*(C.jl_array_t))(unsafe.Pointer(value))
-		data := array.data
-		ptr := unsafe.Pointer(data)
-		for i := range v.Elms {
-			// https://stackoverflow.com/a/49961256
-			p := (*uint64)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(uint64(0))))
-			(*v).Elms[i] = *p
-		}
+		unmarshalMat[uint64, *uint64](data, v)
 	case *Mat[int8]:
-		array := (*(C.jl_array_t))(unsafe.Pointer(value))
-		data := array.data
-		ptr := unsafe.Pointer(data)
-		for i := range v.Elms {
-			// https://stackoverflow.com/a/49961256
-			p := (*int8)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(int8(0))))
-			(*v).Elms[i] = *p
-		}
+		unmarshalMat[int8, *int8](data, v)
 	case *Mat[int16]:
-		array := (*(C.jl_array_t))(unsafe.Pointer(value))
-		data := array.data
-		ptr := unsafe.Pointer(data)
-		for i := range v.Elms {
-			// https://stackoverflow.com/a/49961256
-			p := (*int16)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(int16(0))))
-			(*v).Elms[i] = *p
-		}
+		unmarshalMat[int16, *int16](data, v)
 	case *Mat[int32]:
-		array := (*(C.jl_array_t))(unsafe.Pointer(value))
-		data := array.data
-		ptr := unsafe.Pointer(data)
-		for i := range v.Elms {
-			// https://stackoverflow.com/a/49961256
-			p := (*int32)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(int32(0))))
-			(*v).Elms[i] = *p
-		}
+		unmarshalMat[int32, *int32](data, v)
 	case *Mat[int64]:
-		array := (*(C.jl_array_t))(unsafe.Pointer(value))
-		data := array.data
-		ptr := unsafe.Pointer(data)
-		for i := range v.Elms {
-			// https://stackoverflow.com/a/49961256
-			p := (*int64)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(int64(0))))
-			(*v).Elms[i] = *p
-		}
+		unmarshalMat[int64, *int64](data, v)
 	case *Mat[float32]:
-		// same logic for *[]float32 as done above for *[]byte
-		array := (*(C.jl_array_t))(unsafe.Pointer(value))
-		data := array.data
-		ptr := unsafe.Pointer(data)
-		for i := range v.Elms {
-			// https://stackoverflow.com/a/49961256
-			p := (*float32)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(float32(0))))
-			(*v).Elms[i] = *p
-		}
+		unmarshalMat[float32, *float32](data, v)
 	case *Mat[float64]:
-		// same logic for *[]float64 as done above for *[]byte
-		array := (*(C.jl_array_t))(unsafe.Pointer(value))
-		data := array.data
-		ptr := unsafe.Pointer(data)
-		for i := range v.Elms {
-			// https://stackoverflow.com/a/49961256
-			p := (*float64)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(float64(0))))
-			(*v).Elms[i] = *p
-		}
+		unmarshalMat[float64, *float64](data, v)
 	default:
 		return fmt.Errorf("invalid type, not supported %T", v)
 	}
 
 	return nil
+}
+
+// unmarshalMat is a generic way to unmarshal julia value into matrix type
+// type-parametrized by primitive types. interestingly, we need to
+// type-parametrize this function using both T and its pointer.
+func unmarshalMat[T PrimitiveTypes, PtrT *T](jlValue *jlValue, v *Mat[T]) {
+	var el T
+	value := jlValue.value
+
+	// cast value as unsafe pointer first, which makes it
+	// equivalent to void* in C, then cast it to
+	// pointer of jl_array_t
+	array := (*(C.jl_array_t))(unsafe.Pointer(value))
+
+	// access the data field
+	data := array.data
+
+	// cast it as unsafe pointer in order to perform
+	// pointer arithmetics
+	ptr := unsafe.Pointer(data)
+
+	// better be sure that returned data is of that specific length
+	for i := range v.Elms {
+		// https://stackoverflow.com/a/49961256
+		p := (PtrT)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
+		(*v).Elms[i] = *p
+	}
+}
+
+// marshalMat is a generic serialization of input matrix to julia value.
+// since type casting to pointer of T is required, it seems it is
+// required to parametrize the pointer of T!
+func marshalMat[T PrimitiveTypes, PtrT *T](v *Mat[T]) (*jlValue, error) {
+	n := uint64(len(v.Dims))
+	var el T
+
+	arrayType, _ := getArrayType(n, el)
+	array, err := allocArray(arrayType, v.Dims...)
+	if err != nil {
+		return nil, fmt.Errorf("could not allocate array: %w", err)
+	}
+
+	data := array.data
+	ptr := unsafe.Pointer(data)
+
+	count, err := dim2NumElms(v.Dims)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < count; i++ {
+		p := (PtrT)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
+		*p = v.Elms[i]
+	}
+
+	return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+}
+
+// getArrayType takes element el as empty interface type because we can't do
+// type switch on generics!
+func getArrayType(n uint64, el any) (*C.jl_value_t, error) {
+	switch el.(type) {
+	case bool:
+		return C.jl_apply_array_type(
+			(*(C.jl_value_t))(
+				unsafe.Pointer(
+					C.jl_int8_type,
+				),
+			),
+			C.ulong(n),
+		), nil
+	case uint8:
+		return C.jl_apply_array_type(
+			(*(C.jl_value_t))(
+				unsafe.Pointer(
+					C.jl_uint8_type,
+				),
+			),
+			C.ulong(n),
+		), nil
+	case uint16:
+		return C.jl_apply_array_type(
+			(*(C.jl_value_t))(
+				unsafe.Pointer(
+					C.jl_uint16_type,
+				),
+			),
+			C.ulong(n),
+		), nil
+	case uint32:
+		return C.jl_apply_array_type(
+			(*(C.jl_value_t))(
+				unsafe.Pointer(
+					C.jl_uint32_type,
+				),
+			),
+			C.ulong(n),
+		), nil
+	case uint64:
+		return C.jl_apply_array_type(
+			(*(C.jl_value_t))(
+				unsafe.Pointer(
+					C.jl_uint64_type,
+				),
+			),
+			C.ulong(n),
+		), nil
+	case int8:
+		return C.jl_apply_array_type(
+			(*(C.jl_value_t))(
+				unsafe.Pointer(
+					C.jl_int8_type,
+				),
+			),
+			C.ulong(n),
+		), nil
+	case int16:
+		return C.jl_apply_array_type(
+			(*(C.jl_value_t))(
+				unsafe.Pointer(
+					C.jl_int16_type,
+				),
+			),
+			C.ulong(n),
+		), nil
+	case int32:
+		return C.jl_apply_array_type(
+			(*(C.jl_value_t))(
+				unsafe.Pointer(
+					C.jl_int32_type,
+				),
+			),
+			C.ulong(n),
+		), nil
+	case int64:
+		return C.jl_apply_array_type(
+			(*(C.jl_value_t))(
+				unsafe.Pointer(
+					C.jl_int64_type,
+				),
+			),
+			C.ulong(n),
+		), nil
+	case float32:
+		return C.jl_apply_array_type(
+			(*(C.jl_value_t))(
+				unsafe.Pointer(
+					C.jl_float32_type,
+				),
+			),
+			C.ulong(n),
+		), nil
+	case float64:
+		return C.jl_apply_array_type(
+			(*(C.jl_value_t))(
+				unsafe.Pointer(
+					C.jl_float64_type,
+				),
+			),
+			C.ulong(n),
+		), nil
+	default:
+		return nil, fmt.Errorf("invalid type, not supported %T", el)
+	}
+}
+
+// dim2NumElms returns total number of elements inferred by dimension sizes
+func dim2NumElms(dims []int) (int, error) {
+	var numElements int
+	if len(dims) == 0 {
+		return 0, fmt.Errorf("invalid dims, length needs to be greater than 0")
+	}
+
+	for i, dim := range dims {
+		if dim <= 0 {
+			return 0, fmt.Errorf("invalid dims, needs to be greater than 0")
+		}
+		if i == 0 {
+			numElements = dim
+			continue
+		}
+
+		numElements *= dim
+	}
+
+	return numElements, nil
 }
