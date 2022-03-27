@@ -42,6 +42,14 @@ type Mat[T PrimitiveTypes] struct {
 	Dims []int `json:"dims,omitempty"`
 }
 
+func (g *Mat[T]) GetElms() []T {
+	return g.Elms
+}
+
+func (g *Mat[T]) GetDims() []int {
+	return g.Dims
+}
+
 // NewMat creates a new instance of matrix and validates if the length of
 // elements is satisfied by the dimensions
 func NewMat[T PrimitiveTypes](values []T, dims ...int) (*Mat[T], error) {

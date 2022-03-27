@@ -52,23 +52,6 @@ func TestLen(t *testing.T) {
 	if d.Len() != 3 {
 		t.Fatal("expected length to be 3 using method")
 	}
-
-	if Len(d) != 3 {
-		t.Fatal("expected length to be 3, using func")
-	}
-}
-
-func do(x any) int {
-	switch v := x.(type) {
-	case *data[int32]:
-		return v.Len()
-	default:
-		return -1
-	}
-}
-
-func Len[T PrimitiveTypes](x *data[T]) int {
-	return len(x.values)
 }
 
 func TestIsSameType(t *testing.T) {
