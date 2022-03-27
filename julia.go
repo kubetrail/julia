@@ -22,9 +22,16 @@ const (
 	ModuleMain
 )
 
+const (
+	jlValueTypeOf = "__jlValueTypeOf"
+)
+
 func Initialize() {
 	/* required: setup the Julia context */
 	C.jl_init()
+
+	// declare a few functions for use in this library
+	_, _ = Eval(fmt.Sprintf("%s(x) = Vector{UInt8}(string(typeof(x)))", jlValueTypeOf))
 }
 
 func Finalize() {
@@ -41,6 +48,26 @@ func Finalize() {
 // of it is typically accessed via Marshal/Unmarshal functions.
 type jlValue struct {
 	value *C.jl_value_t
+}
+
+// Type evaluates to julia representation of typeof
+func (g *jlValue) Type() string {
+	resp, _ := EvalFunc(jlValueTypeOf, ModuleMain, g)
+	n := Len(resp)
+
+	out, _ := NewMat(make([]uint8, n))
+	_ = Unmarshal(resp, out)
+
+	return string(out.GetElms())
+}
+
+func Len(g *jlValue) int {
+	length, _ := EvalFunc("length", ModuleBase, g)
+
+	var n int64
+	_ = Unmarshal(length, &n)
+
+	return int(n)
 }
 
 func Marshal[T PrimitiveTypes | PrimitiveSliceTypes | MatTypes](x T) (*jlValue, error) {
@@ -299,6 +326,30 @@ func unmarshal(data *jlValue, x any) error {
 	return nil
 }
 
+// marshalMat is a generic serialization of input matrix to julia value.
+// since type casting to pointer of T is required, it seems it is
+// required to parametrize the pointer of T!
+func marshalMat[T PrimitiveTypes, PtrT *T](v *Mat[T]) (*jlValue, error) {
+	n := uint64(len(v.Dims))
+	var el T
+
+	arrayType, _ := getArrayType(n, el)
+	array, err := allocArray(arrayType, v.Dims...)
+	if err != nil {
+		return nil, fmt.Errorf("could not allocate array: %w", err)
+	}
+
+	data := array.data
+	ptr := unsafe.Pointer(data)
+
+	for i := range v.Elms {
+		p := (PtrT)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
+		*p = v.Elms[i]
+	}
+
+	return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
+}
+
 // unmarshalMat is a generic way to unmarshal julia value into matrix type
 // type-parametrized by primitive types. interestingly, we need to
 // type-parametrize this function using both T and its pointer.
@@ -324,35 +375,6 @@ func unmarshalMat[T PrimitiveTypes, PtrT *T](jlValue *jlValue, v *Mat[T]) {
 		p := (PtrT)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
 		(*v).Elms[i] = *p
 	}
-}
-
-// marshalMat is a generic serialization of input matrix to julia value.
-// since type casting to pointer of T is required, it seems it is
-// required to parametrize the pointer of T!
-func marshalMat[T PrimitiveTypes, PtrT *T](v *Mat[T]) (*jlValue, error) {
-	n := uint64(len(v.Dims))
-	var el T
-
-	arrayType, _ := getArrayType(n, el)
-	array, err := allocArray(arrayType, v.Dims...)
-	if err != nil {
-		return nil, fmt.Errorf("could not allocate array: %w", err)
-	}
-
-	data := array.data
-	ptr := unsafe.Pointer(data)
-
-	count, err := dim2NumElms(v.Dims)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := 0; i < count; i++ {
-		p := (PtrT)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-		*p = v.Elms[i]
-	}
-
-	return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
 }
 
 // getArrayType takes element el as empty interface type because we can't do
