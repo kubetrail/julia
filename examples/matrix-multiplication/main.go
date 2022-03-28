@@ -51,5 +51,5 @@ func main() {
 
 	// print output
 	fmt.Println("matrix multiplied by its inverse is an identity matrix:")
-	fmt.Println(mat.Elms)
+	fmt.Println(mat.GetElms())
 }

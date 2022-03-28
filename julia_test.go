@@ -300,7 +300,7 @@ func TestUnmarshalOutputOfRandn2x3(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Println(out.Elms)
+	fmt.Println(out.elms)
 }
 
 func TestTypeofSlice(t *testing.T) {

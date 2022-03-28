@@ -38,16 +38,16 @@ type MatTypes interface {
 // Mat represents the matrix for supported data types
 // parameterized by primitive types
 type Mat[T PrimitiveTypes] struct {
-	Elms []T   `json:"elms,omitempty"`
-	Dims []int `json:"dims,omitempty"`
+	elms []T   `json:"elms,omitempty"`
+	dims []int `json:"dims,omitempty"`
 }
 
 func (g *Mat[T]) GetElms() []T {
-	return g.Elms
+	return g.elms
 }
 
 func (g *Mat[T]) GetDims() []int {
-	return g.Dims
+	return g.dims
 }
 
 // NewMat creates a new instance of matrix and validates if the length of
@@ -58,15 +58,15 @@ func NewMat[T PrimitiveTypes](values []T, dims ...int) (*Mat[T], error) {
 	}
 
 	m := &Mat[T]{
-		Dims: dims,
-		Elms: values,
+		dims: dims,
+		elms: values,
 	}
 
-	if len(m.Dims) == 0 {
+	if len(m.dims) == 0 {
 		return nil, fmt.Errorf("invalid dimensions")
 	}
 
-	numElements, err := dim2NumElms(m.Dims)
+	numElements, err := dim2NumElms(m.dims)
 	if err != nil {
 		return nil, err
 	}
