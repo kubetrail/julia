@@ -165,7 +165,7 @@ func main() {
 }
 ```
 ## dockerfile
-A `dockerfile` can be used to build these examples
+A `dockerfile` can be used to build these [examples](./examples)
 ```bash
 docker build -t go-julia ./
 ```
@@ -192,8 +192,8 @@ A type-parametrized `matrix` type is defined:
 // Mat represents the matrix for supported data types
 // parameterized by primitive types
 type Mat[T PrimitiveTypes] struct {
-	Elms []T   `json:"elms,omitempty"`
-	Dims []int `json:"dims,omitempty"`
+	elms []T   `json:"elms,omitempty"`
+	dims []int `json:"dims,omitempty"`
 }
 ```
 

@@ -330,11 +330,11 @@ func unmarshal(data *jlValue, x any) error {
 // since type casting to pointer of T is required, it seems it is
 // required to parametrize the pointer of T!
 func marshalMat[T PrimitiveTypes, PtrT *T](v *Mat[T]) (*jlValue, error) {
-	n := uint64(len(v.Dims))
+	n := uint64(len(v.dims))
 	var el T
 
 	arrayType, _ := getArrayType(n, el)
-	array, err := allocArray(arrayType, v.Dims...)
+	array, err := allocArray(arrayType, v.dims...)
 	if err != nil {
 		return nil, fmt.Errorf("could not allocate array: %w", err)
 	}
@@ -342,9 +342,9 @@ func marshalMat[T PrimitiveTypes, PtrT *T](v *Mat[T]) (*jlValue, error) {
 	data := array.data
 	ptr := unsafe.Pointer(data)
 
-	for i := range v.Elms {
+	for i := range v.elms {
 		p := (PtrT)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-		*p = v.Elms[i]
+		*p = v.elms[i]
 	}
 
 	return &jlValue{value: (*(C.jl_value_t))(unsafe.Pointer(array))}, nil
@@ -370,10 +370,10 @@ func unmarshalMat[T PrimitiveTypes, PtrT *T](jlValue *jlValue, v *Mat[T]) {
 	ptr := unsafe.Pointer(data)
 
 	// better be sure that returned data is of that specific length
-	for i := range v.Elms {
+	for i := range v.elms {
 		// https://stackoverflow.com/a/49961256
 		p := (PtrT)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof(el)))
-		(*v).Elms[i] = *p
+		(*v).elms[i] = *p
 	}
 }
 
