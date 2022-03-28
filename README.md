@@ -192,8 +192,8 @@ A type-parametrized `matrix` type is defined:
 // Mat represents the matrix for supported data types
 // parameterized by primitive types
 type Mat[T PrimitiveTypes] struct {
-	elms []T   `json:"elms,omitempty"`
-	dims []int `json:"dims,omitempty"`
+	elms []T
+	dims []int
 }
 ```
 
