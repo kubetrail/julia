@@ -44,7 +44,7 @@ func main() {
 	}
 
 	// print matrix elements
-	fmt.Println("rand mat:", mat.elms)
+	fmt.Println("rand mat:", mat.GetElms())
 
 	// now pass this matrix back to julia to compute its inverse.
 	// marshaling is required to pass any data to julia runtime
