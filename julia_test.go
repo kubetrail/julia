@@ -2,6 +2,7 @@ package julia
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 )
 
@@ -711,4 +712,39 @@ func TestTypeofTensor(t *testing.T) {
 			t.Fatal("expected Array{UInt16, 3}, got", argType)
 		}
 	}
+}
+
+func TestReceiveFromChannel(t *testing.T) {
+	input, output := juliaGoRoutine()
+
+	n := 10
+	for i := 0; i < 100; i++ {
+		x := make([]float64, n*n)
+		for j := range x {
+			x[j] = rand.Float64()
+		}
+		mat, _ := NewMat(x, n, n)
+		input <- mat
+		mat = <-output
+	}
+}
+
+func juliaGoRoutine() (chan<- *Mat[float64], <-chan *Mat[float64]) {
+	input := make(chan *Mat[float64])
+	output := make(chan *Mat[float64])
+
+	go func() {
+		Initialize()
+		defer Finalize()
+
+		for mat := range input {
+			_, _ = Marshal(mat)
+			/*resp, _ := EvalFunc("inv", ModuleBase, arg)
+			m, _ := NewMat(make([]float64, len(mat.GetElms())), mat.GetDims()...)
+			_ = Unmarshal(resp, m)*/
+			output <- mat
+		}
+	}()
+
+	return input, output
 }

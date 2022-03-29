@@ -209,3 +209,5 @@ concurrency very easily, extra care needs to be taken to ensure that `julia`
 does not run as part of multiple goroutines.
 
 * https://discourse.julialang.org/t/problems-scaling-jl-alloc-array-2d-c-api/63341
+* https://github.com/JuliaLang/julia/issues/27952
+* https://discourse.julialang.org/t/question-on-jl-alloc-array-2d-seg-fault/78698

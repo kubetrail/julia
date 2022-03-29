@@ -8,6 +8,17 @@ package julia
 #cgo CFLAGS: -fPIC -DJULIA_INIT_DIR="/usr/local/julia/lib" -I/usr/local/julia/include/julia -I.
 #cgo LDFLAGS: -L/usr/local/julia/lib/julia  -L/usr/local/julia/lib -Wl,-rpath,/usr/local/julia/lib -ljulia
 #include <julia.h>
+
+// https://stackoverflow.com/questions/51904947/calling-cgo-macro-function
+extern void jl_gc_push1(void *arg1) {
+	jl_value_t *arg;
+	//JL_GC_PUSHARGS(args, 2); // args can now hold 2 `jl_value_t*` objects
+	JL_GC_PUSH1(arg);
+	JL_GC_POP();
+}
+extern void jl_gc_pop() {
+	JL_GC_POP();
+}
 */
 import "C"
 import (
@@ -81,6 +92,14 @@ func Unmarshal[T PrimitivePointerTypes | MatTypes](data *jlValue, x T) error {
 // Eval evaluates input as if it were julia code
 func Eval(input string) (*jlValue, error) {
 	return &jlValue{value: C.jl_eval_string(C.CString(input))}, nil
+}
+
+func GcPush1(arg1 *jlValue) {
+	C.jl_gc_push1(unsafe.Pointer(arg1.value))
+}
+
+func GcPop() {
+	C.jl_gc_pop()
 }
 
 // EvalFunc evaluates a function literal, represented by name and module it is defined in,
